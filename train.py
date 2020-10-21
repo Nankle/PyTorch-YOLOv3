@@ -39,12 +39,12 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     print(opt)
 
-    logger = Logger("logs")
+    logger = Logger("logs_1")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    os.makedirs("output", exist_ok=True)
-    os.makedirs("checkpoints", exist_ok=True)
+    os.makedirs("output_1", exist_ok=True)
+    os.makedirs("checkpoints_1", exist_ok=True)
 
     # Get data configuration
     data_config = parse_data_config(opt.data_config)
