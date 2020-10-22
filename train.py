@@ -39,6 +39,8 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     print(opt)
 
+    os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+
     logger = Logger("logs_1")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
