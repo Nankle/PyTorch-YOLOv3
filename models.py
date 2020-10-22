@@ -123,7 +123,7 @@ class YOLOLayer(nn.Module):
         self.grid_size = grid_size
         g = self.grid_size
         FloatTensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
-        self.stride = self.img_dim / self.grid_size
+        self.stride = self.img_dim / self.grid_size      #降采样倍数
         # Calculate offsets for each grid
         self.grid_x = torch.arange(g).repeat(g, 1).view([1, 1, g, g]).type(FloatTensor)
         self.grid_y = torch.arange(g).repeat(g, 1).t().view([1, 1, g, g]).type(FloatTensor)
@@ -138,9 +138,9 @@ class YOLOLayer(nn.Module):
         LongTensor = torch.cuda.LongTensor if x.is_cuda else torch.LongTensor
         ByteTensor = torch.cuda.ByteTensor if x.is_cuda else torch.ByteTensor
 
-        self.img_dim = img_dim
-        num_samples = x.size(0)
-        grid_size = x.size(2)
+        self.img_dim = img_dim    #origin input img size
+        num_samples = x.size(0)   # filters number
+        grid_size = x.size(2)     # grid size in the yolo layer
 
         prediction = (
             x.view(num_samples, self.num_anchors, self.num_classes + 5, grid_size, grid_size)
