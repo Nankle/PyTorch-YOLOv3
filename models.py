@@ -106,7 +106,7 @@ class EmptyLayer(nn.Module):
 class YOLOLayer(nn.Module):
     """Detection layer"""
     def __init__(self, anchors, num_classes, img_dim=672):
-        super(YOLOLayer, self).__init__()
+        super(YOLOLayer, self).__init__()   #对父类进行初始化
         self.anchors = anchors
         self.num_anchors = len(anchors)
         self.num_classes = num_classes
@@ -139,11 +139,12 @@ class YOLOLayer(nn.Module):
         ByteTensor = torch.cuda.ByteTensor if x.is_cuda else torch.ByteTensor
 
         self.img_dim = img_dim    #origin input img size
-        num_samples = x.size(0)   # filters number
+        num_samples = x.size(0)   # Batch Size
         grid_size = x.size(2)     # grid size in the yolo layer
 
+        #相当于YOLO layer传进来的上一层的输出就已经是预测值了，只不过通过YOLO层产生Loss用来反向传播
         prediction = (
-            x.view(num_samples, self.num_anchors, self.num_classes + 5, grid_size, grid_size)
+            x.view(num_samples, self.num_anchors, self.num_classes + 11, grid_size, grid_size)
             .permute(0, 1, 3, 4, 2)
             .contiguous()
         )
@@ -173,7 +174,7 @@ class YOLOLayer(nn.Module):
                 pred_conf.view(num_samples, -1, 1),
                 pred_cls.view(num_samples, -1, self.num_classes),
             ),
-            -1,
+            -1,    #按照最后一维进行concat
         )
 
         if targets is None:

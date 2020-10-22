@@ -26,6 +26,7 @@ def pad_to_square(img, pad_value):
 
 
 def resize(image, size):
+    # 上采样下采样函数
     image = F.interpolate(image.unsqueeze(0), size=size, mode="nearest").squeeze(0)
     return image
 
@@ -57,7 +58,7 @@ class ImageFolder(Dataset):
 
 
 class ListDataset(Dataset):
-    def __init__(self, list_path, img_size=672, augment=True, multiscale=True, normalized_labels=True):
+    def __init__(self, list_path, img_size=672, augment=False, multiscale=True, normalized_labels=True):
         with open(list_path, "r") as file:
             self.img_files = file.readlines()
 
@@ -70,7 +71,7 @@ class ListDataset(Dataset):
         self.augment = augment
         self.multiscale = multiscale
         self.normalized_labels = normalized_labels
-        self.min_size = self.img_size - 3 * 32
+        self.min_size = self.img_size - 2 * 32
         self.max_size = self.img_size + 3 * 32
         self.batch_count = 0
 
@@ -91,7 +92,7 @@ class ListDataset(Dataset):
             img = img.expand((3, img.shape[1:]))
 
         _, h, w = img.shape
-        h_factor, w_factor = (h, w) if self.normalized_labels else (1, 1)
+        h_factor, w_factor = (h, w) if self.normalized_labels else (1, 1)   #如果没有进行归一化那么缩放比例是（1，1）
         # Pad to square resolution
         img, pad = pad_to_square(img, 0)
         _, padded_h, padded_w = img.shape
@@ -104,24 +105,25 @@ class ListDataset(Dataset):
 
         targets = None
         if os.path.exists(label_path):
-            boxes = torch.from_numpy(np.loadtxt(label_path).reshape(-1, 5))
+            boxes = torch.from_numpy(np.loadtxt(label_path).reshape(-1, 11))
+            
             # Extract coordinates for unpadded + unscaled image
-            x1 = w_factor * (boxes[:, 1] - boxes[:, 3] / 2)
-            y1 = h_factor * (boxes[:, 2] - boxes[:, 4] / 2)
-            x2 = w_factor * (boxes[:, 1] + boxes[:, 3] / 2)
-            y2 = h_factor * (boxes[:, 2] + boxes[:, 4] / 2)
-            # Adjust for added padding
-            x1 += pad[0]
-            y1 += pad[2]
-            x2 += pad[1]
-            y2 += pad[3]
-            # Returns (x, y, w, h)
-            boxes[:, 1] = ((x1 + x2) / 2) / padded_w
-            boxes[:, 2] = ((y1 + y2) / 2) / padded_h
-            boxes[:, 3] *= w_factor / padded_w
-            boxes[:, 4] *= h_factor / padded_h
+            # x1 = w_factor * (boxes[:, 1] - boxes[:, 3] / 2)
+            # y1 = h_factor * (boxes[:, 2] - boxes[:, 4] / 2)
+            # x2 = w_factor * (boxes[:, 1] + boxes[:, 3] / 2)
+            # y2 = h_factor * (boxes[:, 2] + boxes[:, 4] / 2)
+            # # Adjust for added padding
+            # x1 += pad[0]
+            # y1 += pad[2]
+            # x2 += pad[1]
+            # y2 += pad[3]
+            # # Returns (x, y, w, h)
+            # boxes[:, 1] = ((x1 + x2) / 2) / padded_w
+            # boxes[:, 2] = ((y1 + y2) / 2) / padded_h
+            # boxes[:, 3] *= w_factor / padded_w
+            # boxes[:, 4] *= h_factor / padded_h
 
-            targets = torch.zeros((len(boxes), 6))
+            targets = torch.zeros((len(boxes), 12))   #增加1维用来控制batch
             targets[:, 1:] = boxes
 
         # Apply augmentations
