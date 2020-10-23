@@ -170,7 +170,7 @@ class YOLOLayer(nn.Module):
 
         output = torch.cat(
             (
-                pred_boxes.view(num_samples, -1, 4) * self.stride,
+                pred_boxes.view(num_samples, -1, 10) * self.stride,
                 pred_conf.view(num_samples, -1, 1),
                 pred_cls.view(num_samples, -1, self.num_classes),
             ),
