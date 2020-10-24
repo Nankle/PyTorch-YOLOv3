@@ -269,10 +269,10 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
     ByteTensor = torch.cuda.ByteTensor if pred_boxes.is_cuda else torch.ByteTensor
     FloatTensor = torch.cuda.FloatTensor if pred_boxes.is_cuda else torch.FloatTensor
 
-    nB = pred_boxes.size(0)
-    nA = pred_boxes.size(1)
-    nC = pred_cls.size(-1)
-    nG = pred_boxes.size(2)
+    nB = pred_boxes.size(0)    # Batch Size
+    nA = pred_boxes.size(1)    # Anchors Number
+    nC = pred_cls.size(-1)     # Prediction Class Number
+    nG = pred_boxes.size(2)    # Grid Size
 
     # Output tensors
     obj_mask = ByteTensor(nB, nA, nG, nG).fill_(0)

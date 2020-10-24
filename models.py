@@ -127,7 +127,7 @@ class YOLOLayer(nn.Module):
         # Calculate offsets for each grid
         self.grid_x = torch.arange(g).repeat(g, 1).view([1, 1, g, g]).type(FloatTensor)
         self.grid_y = torch.arange(g).repeat(g, 1).t().view([1, 1, g, g]).type(FloatTensor)
-        self.scaled_anchors = FloatTensor([(a_w / self.stride, a_h / self.stride) for a_w, a_h in self.anchors])
+        self.scaled_anchors = FloatTensor([(a_w / self.stride, a_h / self.stride) for a_w, a_h in self.anchors])  #搞清楚self.anchors中的存储格式
         self.anchor_w = self.scaled_anchors[:, 0:1].view((1, self.num_anchors, 1, 1))
         self.anchor_h = self.scaled_anchors[:, 1:2].view((1, self.num_anchors, 1, 1))
 
@@ -150,18 +150,30 @@ class YOLOLayer(nn.Module):
         )
 
         # Get outputs
-        x = torch.sigmoid(prediction[..., 0])  # Center x
-        y = torch.sigmoid(prediction[..., 1])  # Center y
-        w = prediction[..., 2]  # Width
-        h = prediction[..., 3]  # Height
-        pred_conf = torch.sigmoid(prediction[..., 4])  # Conf
-        pred_cls = torch.sigmoid(prediction[..., 5:])  # Cls pred.
+        # type Xc Yc x1b y1b x2b y2b x3b y3b x4b y4b
+        xc = torch.sigmoid(prediction[..., 0])  # Visual central x
+        yc = torch.sigmoid(prediction[..., 1])  # Visual central y
+        x1b = torch.sigmoid(prediction[..., 2])
+        y1b = torch.sigmoid(prediction[..., 3])
+        x2b = torch.sigmoid(prediction[..., 4])
+        y2b = torch.sigmoid(prediction[..., 5])
+        x3b = torch.sigmoid(prediction[..., 6])
+        y3b = torch.sigmoid(prediction[..., 7])
+        x4b = torch.sigmoid(prediction[..., 8])
+        y4b = torch.sigmoid(prediction[..., 9])
+        #先统一都使用sigmoid函数进行归一化，进行实验
+
+        # w = prediction[..., 2]  # Width
+        # h = prediction[..., 3]  # Height
+        pred_conf = torch.sigmoid(prediction[..., 10])  # Conf    一个用于衡量是否包含物体的置信度值 0/1
+        pred_cls = torch.sigmoid(prediction[..., 11:])  # Cls pred.
 
         # If grid size does not match current we compute new offsets
         if grid_size != self.grid_size:
             self.compute_grid_offsets(grid_size, cuda=x.is_cuda)
 
         # Add offset and scale with anchors
+        # 新的预测box 将是包含10个参数的一个大box
         pred_boxes = FloatTensor(prediction[..., :4].shape)
         pred_boxes[..., 0] = x.data + self.grid_x
         pred_boxes[..., 1] = y.data + self.grid_y
