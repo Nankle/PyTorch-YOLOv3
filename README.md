@@ -1,4 +1,4 @@
-# Rotated-YOLOv3
+# Rotated-YOLO
 Rotated Object Detection based on YOLOv3 and Retina-Net、textbox++.
 
 ## Installation
