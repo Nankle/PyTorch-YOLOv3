@@ -286,7 +286,7 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
     tcls = FloatTensor(nB, nA, nG, nG, nC).fill_(0)
 
     # Convert to position relative to box
-    target_boxes = target[:, 2:6] * nG
+    target_boxes = target[:, 2:6] * nG    #归一化后的box在当前层的实际位置
     gxy = target_boxes[:, :2]
     gwh = target_boxes[:, 2:]
     # Get anchors with best iou
@@ -296,7 +296,7 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
     b, target_labels = target[:, :2].long().t()
     gx, gy = gxy.t()
     gw, gh = gwh.t()
-    gi, gj = gxy.long().t()
+    gi, gj = gxy.long().t()  #取整
     # Set masks
     obj_mask[b, best_n, gj, gi] = 1
     noobj_mask[b, best_n, gj, gi] = 0
@@ -306,7 +306,7 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
         noobj_mask[b[i], anchor_ious > ignore_thres, gj[i], gi[i]] = 0
 
     # Coordinates
-    tx[b, best_n, gj, gi] = gx - gx.floor()
+    tx[b, best_n, gj, gi] = gx - gx.floor()   #向下取整
     ty[b, best_n, gj, gi] = gy - gy.floor()
     # Width and height
     tw[b, best_n, gj, gi] = torch.log(gw / anchors[best_n][:, 0] + 1e-16)
