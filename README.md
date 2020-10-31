@@ -1,4 +1,4 @@
-# PyTorch-YOLOv3
+# Rotated-YOLOv3
 Rotated Object Detection based on YOLOv3 and Retina-Net、textbox++.
 
 ## Installation
