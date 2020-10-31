@@ -38,11 +38,17 @@ if __name__ == "__main__":
     a = torch.Tensor([[0.4805, 0.6125, 0.7605, 0.0381, 0.2181],\
         [0.2547, 0.1998, 0.1610, 0.3111, 0.5613],\
             [0.5584, 0.4381, 0.3528, 0.1419, 0.6955]])
-    pridiction = a.view(1,-1,3,1)
-    print(pridiction.shape)
-    print(pridiction)
-    b = torch.Tensor([3,3,3]).view(1,1,3,1)
+    b = [[0.4805, 0.6125, 0.7605, 0.0381, 0.2181],\
+        [0.2547, 0.1998, 0.1610, 0.3111, 0.5613],\
+            [0.5584, 0.4381, 0.3528, 0.1419, 0.6955]] 
+    b[:,0] = 1  
+    b = torch.cat(b, 0)
     print(b)
-    print(pridiction.data*b)
+    # pridiction = a.view(1,-1,3,1)
+    # print(pridiction.shape)
+    # print(pridiction)
+    # b = torch.Tensor([3,3,3]).view(1,1,3,1)
+    # print(b)
+    # print(pridiction.data*b)
 
     

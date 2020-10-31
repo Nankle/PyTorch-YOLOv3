@@ -279,10 +279,23 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
     noobj_mask = ByteTensor(nB, nA, nG, nG).fill_(1)
     class_mask = FloatTensor(nB, nA, nG, nG).fill_(0)
     iou_scores = FloatTensor(nB, nA, nG, nG).fill_(0)
-    tx = FloatTensor(nB, nA, nG, nG).fill_(0)
-    ty = FloatTensor(nB, nA, nG, nG).fill_(0)
-    tw = FloatTensor(nB, nA, nG, nG).fill_(0)
-    th = FloatTensor(nB, nA, nG, nG).fill_(0)
+    
+    txc = FloatTensor(nB, nA, nG, nG).fill_(0)
+    tyc = FloatTensor(nB, nA, nG, nG).fill_(0)
+    tx1b = FloatTensor(nB, nA, nG, nG).fill_(0)
+    ty1b = FloatTensor(nB, nA, nG, nG).fill_(0)
+    tx2b = FloatTensor(nB, nA, nG, nG).fill_(0)
+    ty2b = FloatTensor(nB, nA, nG, nG).fill_(0)
+    tx3b = FloatTensor(nB, nA, nG, nG).fill_(0)
+    ty3b = FloatTensor(nB, nA, nG, nG).fill_(0)
+    tx4b = FloatTensor(nB, nA, nG, nG).fill_(0)
+    ty4b = FloatTensor(nB, nA, nG, nG).fill_(0)
+
+    # tx = FloatTensor(nB, nA, nG, nG).fill_(0)
+    # ty = FloatTensor(nB, nA, nG, nG).fill_(0)
+    # tw = FloatTensor(nB, nA, nG, nG).fill_(0)
+    # th = FloatTensor(nB, nA, nG, nG).fill_(0)
+
     tcls = FloatTensor(nB, nA, nG, nG, nC).fill_(0)
 
     # Convert to position relative to box
