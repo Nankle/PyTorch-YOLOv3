@@ -9,7 +9,8 @@ from torch.autograd import Variable
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-
+import shapely
+from shapely.geometry import Polygon,MultiPoint #多边形
 
 def to_cpu(tensor):
     return tensor.detach().cpu()
@@ -33,6 +34,7 @@ def weights_init_normal(m):
         torch.nn.init.constant_(m.bias.data, 0.0)
 
 
+# 用于detect模块
 def rescale_boxes(boxes, current_dim, original_shape):
     """ Rescales bounding boxes to the original shape """
     orig_h, orig_w = original_shape
@@ -193,7 +195,7 @@ def bbox_wh_iou(wh1, wh2):
 def bbox_iou(box1, box2, x1y1x2y2=True):
     """
     Returns the IoU of two bounding boxes
-    """
+    
     if not x1y1x2y2:
         # Transform from center and width to exact coordinates
         b1_x1, b1_x2 = box1[:, 0] - box1[:, 2] / 2, box1[:, 0] + box1[:, 2] / 2
@@ -204,6 +206,7 @@ def bbox_iou(box1, box2, x1y1x2y2=True):
         # Get the coordinates of bounding boxes
         b1_x1, b1_y1, b1_x2, b1_y2 = box1[:, 0], box1[:, 1], box1[:, 2], box1[:, 3]
         b2_x1, b2_y1, b2_x2, b2_y2 = box2[:, 0], box2[:, 1], box2[:, 2], box2[:, 3]
+    
 
     # get the corrdinates of the intersection rectangle
     inter_rect_x1 = torch.max(b1_x1, b2_x1)
@@ -220,7 +223,77 @@ def bbox_iou(box1, box2, x1y1x2y2=True):
 
     iou = inter_area / (b1_area + b2_area - inter_area + 1e-16)
 
-    return iou
+    """
+
+    # 已知4个角点求IOU-scores
+    # b1xc = box1[:, 0]
+    # b1yc = box1[:, 1]
+    # b1x1 = b1xc + box1[:, 2]
+    # b1y1 = b1yc + box1[:, 3]
+    # b1x2 = b1xc + box1[:, 4]
+    # b1y2 = b1yc + box1[:, 5]
+    # b1x3 = b1xc + box1[:, 6]
+    # b1y3 = b1yc + box1[:, 7]
+    # b1x4 = b1xc + box1[:, 8]
+    # b1y4 = b1yc + box1[:, 9]
+
+    # b2xc = box2[:, 0]
+    # b2yc = box2[:, 1]
+    # b2x1 = b2xc + box2[:, 2]
+    # b2y1 = b2yc + box2[:, 3]
+    # b2x2 = b2xc + box2[:, 4]
+    # b2y2 = b2yc + box2[:, 5]
+    # b2x3 = b2xc + box2[:, 6]
+    # b2y3 = b2yc + box2[:, 7]
+    # b2x4 = b2xc + box2[:, 8]
+    # b2y4 = b2yc + box2[:, 9]
+
+    ious = []
+    for i in range(box1.size(0)):
+        b1xc = box1[i, 0]
+        b1yc = box1[i, 1]
+        b1x1 = b1xc + box1[i, 2]
+        b1y1 = b1yc + box1[i, 3]
+        b1x2 = b1xc + box1[i, 4]
+        b1y2 = b1yc + box1[i, 5]
+        b1x3 = b1xc + box1[i, 6]
+        b1y3 = b1yc + box1[i, 7]
+        b1x4 = b1xc + box1[i, 8]
+        b1y4 = b1yc + box1[i, 9]
+
+        b2xc = box2[i, 0]
+        b2yc = box2[i, 1]
+        b2x1 = b2xc + box2[i, 2]
+        b2y1 = b2yc + box2[i, 3]
+        b2x2 = b2xc + box2[i, 4]
+        b2y2 = b2yc + box2[i, 5]
+        b2x3 = b2xc + box2[i, 6]
+        b2y3 = b2yc + box2[i, 7]
+        b2x4 = b2xc + box2[i, 8]
+        b2y4 = b2yc + box2[i, 9]
+
+        line1 = np.concatenate(b1x1.numpy(), b1y1.numpy(), b1x2.numpy(), b1y2.numpy(),\
+            b1x3.numpy(), b1y3.numpy(), b1x4.numpy(), b1y4.numpy()).reshape(4,2)
+        poly1 = Polygon(line1).convex_hull
+
+        line2 = np.concatenate(b2x1.numpy(), b2y1.numpy(), b2x2.numpy(), b2y2.numpy(),\
+            b2x3.numpy(), b2y3.numpy(), b2x4.numpy(), b2y4.numpy()).reshape(4,2)
+        poly2 = Polygon(line2).convex_hull
+
+        union_poly = np.concatenate((line1,line2))
+
+        inter_area = poly1.intersection(poly2).area  #相交面积
+
+        #union_area = poly1.area + poly2.area - inter_area
+        union_area = MultiPoint(union_poly).convex_hull.area
+        
+        if union_area == 0:
+            iou= 0
+        else:
+            iou=float(inter_area) / union_area
+        ious += iou
+        
+    return torch.Tensor(iou)
 
 
 def non_max_suppression(prediction, conf_thres=0.5, nms_thres=0.4):
@@ -279,7 +352,7 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
     noobj_mask = ByteTensor(nB, nA, nG, nG).fill_(1)
     class_mask = FloatTensor(nB, nA, nG, nG).fill_(0)
     iou_scores = FloatTensor(nB, nA, nG, nG).fill_(0)
-    
+
     txc = FloatTensor(nB, nA, nG, nG).fill_(0)
     tyc = FloatTensor(nB, nA, nG, nG).fill_(0)
     tx1b = FloatTensor(nB, nA, nG, nG).fill_(0)
@@ -299,36 +372,62 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
     tcls = FloatTensor(nB, nA, nG, nG, nC).fill_(0)
 
     # Convert to position relative to box
-    target_boxes = target[:, 2:6] * nG    #归一化后的box在当前层的实际位置
+    target_boxes = target[:, 2:] * nG    #归一化后的box在当前层的实际位置
     gxy = target_boxes[:, :2]
-    gwh = target_boxes[:, 2:]
+    # gwh = target_boxes[:, 2:]
+    gbias = target_boxes[:, 2:]
+
+
     # Get anchors with best iou
-    ious = torch.stack([bbox_wh_iou(anchor, gwh) for anchor in anchors])
-    best_ious, best_n = ious.max(0)
+    # ious = torch.stack([bbox_wh_iou(anchor, gwh) for anchor in anchors])
+    # best_ious, best_n = ious.max(0)
+
+    # 因为目前只有一个anchors，因此暂时把anchors纬的筛选省略掉
+    # 只能对第0维进行操作
+    best_n = torch.zeros(gxy.size(0), dtype=torch.int)
+
     # Separate target values
     b, target_labels = target[:, :2].long().t()
+
     gx, gy = gxy.t()
-    gw, gh = gwh.t()
-    gi, gj = gxy.long().t()  #取整
+    # gw, gh = gwh.t()
+    gx1, gy1, gx2, gy2, gx3, gy3, gx4, gy4 = gbias.t()
+    gi, gj = gxy.long().t()  #取整😍
     # Set masks
     obj_mask[b, best_n, gj, gi] = 1
     noobj_mask[b, best_n, gj, gi] = 0
 
     # Set noobj mask to zero where iou exceeds ignore threshold
-    for i, anchor_ious in enumerate(ious.t()):
-        noobj_mask[b[i], anchor_ious > ignore_thres, gj[i], gi[i]] = 0
+    # for i, anchor_ious in enumerate(ious.t()):
+    #     noobj_mask[b[i], anchor_ious > ignore_thres, gj[i], gi[i]] = 0
 
     # Coordinates
-    tx[b, best_n, gj, gi] = gx - gx.floor()   #向下取整
-    ty[b, best_n, gj, gi] = gy - gy.floor()
+    # tx[b, best_n, gj, gi] = gx - gx.floor()   #向下取整
+    # ty[b, best_n, gj, gi] = gy - gy.floor()
+
+    txc[b, best_n, gj, gi] = gx - gx.floor()
+    tyc[b, best_n, gj, gi] = gy - gy.floor()
+    tx1b[b, best_n, gj, gi] = gx1
+    ty1b[b, best_n, gj, gi] = gy1
+    tx2b[b, best_n, gj, gi] = gx2
+    ty2b[b, best_n, gj, gi] = gy2
+    tx3b[b, best_n, gj, gi] = gx3
+    ty3b[b, best_n, gj, gi] = gy3
+    tx4b[b, best_n, gj, gi] = gx4
+    ty4b[b, best_n, gj, gi] = gy4
+    
+
     # Width and height
-    tw[b, best_n, gj, gi] = torch.log(gw / anchors[best_n][:, 0] + 1e-16)
-    th[b, best_n, gj, gi] = torch.log(gh / anchors[best_n][:, 1] + 1e-16)
+    # tw[b, best_n, gj, gi] = torch.log(gw / anchors[best_n][:, 0] + 1e-16)
+    # th[b, best_n, gj, gi] = torch.log(gh / anchors[best_n][:, 1] + 1e-16)
+
     # One-hot encoding of label
     tcls[b, best_n, gj, gi, target_labels] = 1
+
     # Compute label correctness and iou at best anchor
     class_mask[b, best_n, gj, gi] = (pred_cls[b, best_n, gj, gi].argmax(-1) == target_labels).float()
     iou_scores[b, best_n, gj, gi] = bbox_iou(pred_boxes[b, best_n, gj, gi], target_boxes, x1y1x2y2=False)
 
     tconf = obj_mask.float()
-    return iou_scores, class_mask, obj_mask, noobj_mask, tx, ty, tw, th, tcls, tconf
+    return iou_scores, class_mask, obj_mask, noobj_mask, txc, tyc, tx1b, ty1b,\
+        tx2b, ty2b, tx3b, ty3b, tx4b, ty4b, tcls, tconf

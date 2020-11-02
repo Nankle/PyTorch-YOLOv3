@@ -69,7 +69,7 @@ def create_modules(module_defs):
             anchor_idxs = [int(x) for x in module_def["mask"].split(",")]
             # Extract anchors
             anchors = [int(x) for x in module_def["anchors"].split(",")]
-            anchors = [(anchors[i], anchors[i + 1]) for i in range(0, len(anchors), 2)]
+            # anchors = [(anchors[i], anchors[i + 1]) for i in range(0, len(anchors), 2)]
             # anchors = [anchors[i] for i in anchor_idxs]
             num_classes = int(module_def["classes"])
             img_size = int(hyperparams["height"])
@@ -128,7 +128,8 @@ class YOLOLayer(nn.Module):
         # Calculate offsets for each grid
         self.grid_x = torch.arange(g).repeat(g, 1).view([1, 1, g, g]).type(FloatTensor)
         self.grid_y = torch.arange(g).repeat(g, 1).t().view([1, 1, g, g]).type(FloatTensor)
-        self.scaled_anchors = FloatTensor([(a_w / self.stride, a_h / self.stride) for a_w, a_h in self.anchors])  #搞清楚self.anchors中的存储格式
+        # self.scaled_anchors = FloatTensor([(a_w / self.stride, a_h / self.stride) for a_w, a_h in self.anchors])  #搞清楚self.anchors中的存储格式
+        self.scaled_anchors = FloatTensor([bias / self.stride for bias in self.anchors])
         # self.anchor_w = self.scaled_anchors[:, 0:1].view((1, self.num_anchors, 1, 1))
         # self.anchor_h = self.scaled_anchors[:, 1:2].view((1, self.num_anchors, 1, 1))
 
@@ -140,7 +141,8 @@ class YOLOLayer(nn.Module):
         ByteTensor = torch.cuda.ByteTensor if x.is_cuda else torch.ByteTensor
 
         self.img_dim = img_dim    #origin input img size
-        num_samples = x.size(0)   # Batch Size
+        #？？？？？？？number samples 的真正含义
+        num_samples = x.size(0)   # sample Size
         grid_size = x.size(2)     # grid size in the yolo layer
 
         #相当于YOLO layer传进来的上一层的输出就已经是预测值了，只不过通过YOLO层产生Loss用来反向传播
@@ -177,8 +179,8 @@ class YOLOLayer(nn.Module):
         # Add offset and scale with anchors
         # 新的预测box 将是包含10个参数的一个大box
         pred_boxes = FloatTensor(prediction[..., :10].shape)
-        pred_boxes[..., 0] = x.data + self.grid_x
-        pred_boxes[..., 1] = y.data + self.grid_y
+        pred_boxes[..., 0] = xc.data + self.grid_x
+        pred_boxes[..., 1] = yc.data + self.grid_y
         # pred_boxes[..., 2] = torch.exp(w.data) * self.anchor_w       #乘的是对于anchor w和h的缩放因子
         # pred_boxes[..., 3] = torch.exp(h.data) * self.anchor_h
 
