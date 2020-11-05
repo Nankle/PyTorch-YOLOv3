@@ -65,7 +65,7 @@ def calculate_Iou():
     print(iou)
 
 if __name__ == "__main__":
-    # anchors = torch.Tensor([(100,125),(34,45),(43,78)])
+    # # anchors = torch.Tensor([(100,125),(34,45),(43,78)])
     # targets = torch.Tensor([[77.1,78.2],[87.1,88.2],[97,98],[17,28],[47,58]])
     # print(targets.shape)
     # ious = torch.stack([bbox_wh_iou(anchor, targets) for anchor in anchors])
@@ -104,10 +104,13 @@ if __name__ == "__main__":
     # print(torch.zeros(10, dtype=torch.int))
     # calculate_Iou()
 
-    a = torch.Tensor([10])
-    b = torch.Tensor([12])
-    c = torch.Tensor([13])
-    print(a,b,c)
-    print(a.numpy(), b.numpy(), c.numpy())
-    print(np.concatenate((a,b,c)))
+    # a = np.array([0])
+    # b = np.zeros(1)
+    # print(np.append(a,b))
+
+    a = torch.Tensor([nan, 1 , 2 , nan])
+    print(torch.isnan(a))
+    print(a)
+
+
     

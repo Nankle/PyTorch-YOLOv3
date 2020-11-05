@@ -292,7 +292,7 @@ def bbox_iou(box1, box2, x1y1x2y2=True):
         else:
             iou=float(inter_area) / union_area
         ious += iou
-        
+
     return torch.Tensor(iou)
 
 
@@ -384,7 +384,7 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
 
     # 因为目前只有一个anchors，因此暂时把anchors纬的筛选省略掉
     # 只能对第0维进行操作
-    best_n = torch.zeros(gxy.size(0), dtype=torch.int)
+    best_n = torch.zeros(gxy.size(0), dtype=torch.int).long()
 
     # Separate target values
     b, target_labels = target[:, :2].long().t()
