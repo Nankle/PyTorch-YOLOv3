@@ -108,9 +108,25 @@ if __name__ == "__main__":
     # b = np.zeros(1)
     # print(np.append(a,b))
 
-    a = torch.Tensor([nan, 1 , 2 , nan])
-    print(torch.isnan(a))
-    print(a)
+    # a = torch.Tensor([0, 1 , 2 , np.NaN])
+    # print(torch.isnan(a))
+    # print(a)
+
+    # a = torch.Tensor([[0.4805, 0.6125, 0.7605, 0.0381, 0.2181],\
+    #     [0.2547, 0.1998, 0.1610, 0.3111, 0.5613],[0.5584, 0.4381, 0.3528, 0.1419, 0.6955],\
+    #         [0.5584, 0.4381, 0.3528, 0.1419, 0.6955],[0.5584, 0.4381, 0.3528, 0.1419, 0.6955]])
+    # a.view(1,1,5,5)
+    # print(a[..., 1])
+    # print((torch.exp(a[...,1]) * 100))
+
+    a = '1.txt'
+    c = '2.txt'
+    b = []
+    b.extend(a)
+    print(b)
+    b.extend(c)
+    print(b)
+
 
 
     
